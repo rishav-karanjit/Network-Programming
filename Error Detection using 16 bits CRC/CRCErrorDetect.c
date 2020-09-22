@@ -78,6 +78,3 @@ int main()
     }
     printf("\nNo Error. Data received successfully.\n");
 }
-
-10101011
-101010110000010010000001
