@@ -6,7 +6,6 @@ cc swp_send3.c -w -o s
 
 
 */
-
 #include<stdio.h> 
 #include<stdlib.h>
 #include<string.h> 
@@ -18,52 +17,36 @@ cc swp_send3.c -w -o s
 
 main() 
 { 
-int std,  len, choice, i,j,status,sendsize,port,recvsize,temp1; 
+	int std,  len, choice, i,j,status,sendsize,port,recvsize,temp1; 
+	char str[20], frame[20], temp[20], ack[20],sendwin[20]; 
+	char *msg="network programming " ; // lab  dept of cse sit tumkur";
+	struct sockaddr_in saddr, caddr; 
+	port=5000;
 
-char str[20], frame[20], temp[20], ack[20],sendwin[20]; 
+	//printf("Enter the port address"); 
 
-char *msg="network programming " ; // lab  dept of cse sit tumkur";
+	// scanf("%d", &port); 
 
-struct sockaddr_in saddr, caddr; 
+	std = socket(AF_INET, SOCK_STREAM, 0); 
+	if(std<0) 
+		perror("Error");
+	bzero(&saddr, sizeof(saddr)); 
+	saddr.sin_family = AF_INET; 
+	inet_pton(AF_INET, "127.0.0.1", &saddr.sin_addr); 
+	saddr.sin_port = htons(port); 
 
+	connect(std, (struct sockaddr *)&saddr, sizeof(saddr)); 
 
-    port=5000;
+	printf("\n msg= %s ",msg);
+	printf("\n len = %d ",strlen(msg) );
+	printf("\n len = %d ",strlen(msg) );
+	printf("Enter the text:"); 
+	//scanf("%s", str);
 
-  printf("Enter the port address"); 
-
-  // scanf("%d", &port); 
-
-
-
-std = socket(AF_INET, SOCK_STREAM, 0); 
-
-
-
-
-if(std<0) 
-perror("Error");
-
- 
-bzero(&saddr, sizeof(saddr)); 
-
-saddr.sin_family = AF_INET; 
-inet_pton(AF_INET, "127.0.0.1", &saddr.sin_addr); 
-saddr.sin_port = htons(port); 
-
-connect(std, (struct sockaddr *)&saddr, sizeof(saddr)); 
-
-printf("\n msg= %s ",msg);
-printf("\n len = %d ",strlen(msg) );
-
-printf("\n len = %d ",strlen(msg) );
-
-printf("Enter the text:"); 
-//scanf("%s", str);
-
-i = 0;
-sendsize=5; 
-while(i<strlen(msg)) 
- { 
+	i = 0;
+	sendsize=5; 
+	while(i<strlen(msg)) 
+	 { 
         //sender
         memset(frame, 0, 20); 
         strncpy(frame, msg+i, sendsize); 
@@ -88,7 +71,3 @@ while(i<strlen(msg))
   close(std); 
 
 }
-
-
-
-
