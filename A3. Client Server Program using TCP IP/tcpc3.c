@@ -1,6 +1,3 @@
-
-//author RAGHAVENDRA M    tcps3.c tcp ip client program  
-
 #include<stdio.h>
 #include<sys/types.h>
 #include<sys/socket.h>
