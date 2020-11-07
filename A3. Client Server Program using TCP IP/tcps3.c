@@ -26,7 +26,7 @@ int main(int argc,char *argv[])
 	printf("\nto run client (press + ) and type  : ./c "); 
 	printf("\nEnter server port number  :  Ex: 5000 ");
 	scanf("%d",&portno);
-        
+	
     //    portno=5000;
 	
 	sockfd=socket(AF_INET,SOCK_STREAM,0);
@@ -43,7 +43,7 @@ int main(int argc,char *argv[])
 	printf("\nNow server is up wating for client");
 	
 	listen(sockfd,5);
- 	clilen=sizeof(cli_addr);
+	clilen=sizeof(cli_addr);
 	
 	while(1)
 	{
@@ -53,43 +53,40 @@ int main(int argc,char *argv[])
 		printf("\n New client requested it sockfd  =  %d",newsockfd);
 		bzero(fname,20);
 		close(sockfd);
-     		n=read(newsockfd,fname,20);
-    		printf("\nn Requesting file content  %s  ",fname);
+		n=read(newsockfd,fname,20);
+		printf("\nn Requesting file content  %s  ",fname);
 		slen=strlen(fname);
-	        if(n<0)
-       			error("\nERROR reading from socket");
-       		fptr=fopen(fname,"r");
+		if(n<0)
+			error("\nERROR reading from socket");
+		fptr=fopen(fname,"r");
 		if(fptr==NULL)
-        	{		  
-         	printf("\nSERVER:file not found");
-         	bzero(buffer,20);
-		strcpy(buffer,"file not found....");
-		   if(send(newsockfd, buffer, strlen(buffer), 0) == -1)
-                perror("send");
+		{		  
+			printf("\nSERVER:file not found");
+			bzero(buffer,20);
+			strcpy(buffer,"file not found....");
+			if(send(newsockfd, buffer, strlen(buffer), 0) == -1)
+				perror("send");
 
+			close(newsockfd);
+			fclose(fptr);
+			_exit(0);   
+		}
+		
+		printf("\nserver : Following information is send back to client :- \n\n\n");
+
+		while(!feof(fptr))
+		{
+			fgets(buffer,79,fptr);
+			if(send(newsockfd, buffer, strlen(buffer), 0) == -1)
+				perror("send");
+			puts(buffer);
+		}
+		
+		printf("\nserver :file contents are transfered"); 
+		fclose(fptr);
 		close(newsockfd);
-	 	fclose(fptr);
-         	_exit(0);   
-               }
-	
-   	printf("\nserver : Following information is send back to client :- \n\n\n");
-
-       while(!feof(fptr))
-        {
-	fgets(buffer,79,fptr);
-        if(send(newsockfd, buffer, strlen(buffer), 0) == -1)
-                perror("send");
-	puts(buffer);
-	}
-	
-        printf("\nserver :file contents are transfered"); 
-        fclose(fptr);
-        close(newsockfd);
-        printf("\nserver :Process is going to terminate\n"); 
-       exit(0);
+		printf("\nserver :Process is going to terminate\n"); 
+		exit(0);
     } //while(1)  
-     
+    
 }
- 
- 
- 
