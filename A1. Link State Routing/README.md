@@ -1,5 +1,5 @@
 ### How this program works?
-
+```
 Initialization
 
 N = {A}     // A is a root node.
@@ -14,3 +14,4 @@ loop
   Update D(v) for all v adjacent to w and not in N:
   D(v) = min(D(v) , D(w) + c(w,v))
 Until all nodes in N
+```
