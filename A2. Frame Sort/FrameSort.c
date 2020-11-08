@@ -42,6 +42,7 @@ void sortFrames(frame f[MAX], int n)
 }
 
 void showFrames(frame f[MAX] , int n ){
+	int i;
 	printf("\nframe_id \t frame_data \n");
 	printf("----------------------------\n");
 	for(i=0 ; i < n; i++)
