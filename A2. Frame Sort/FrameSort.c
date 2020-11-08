@@ -1,147 +1,92 @@
-#include<string.h>
-#include<stdlib.h>
 #include<stdio.h>
-struct frame
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
+
+#define MAX 100
+
+typedef struct{
+	int id;
+	char data[MAX];
+}frame;
+
+// Fisher yates algorithm to shuffle the frame
+void shuffleFrames(frame f[MAX], int n)
 {
-  int fno;
-  int random;
-  int len;
-  char text[4];
-}frame[20],temp;
+	int i;
+	for(i=n-1; i>=0; i--)
+	{
+		int j = rand()%(i+1);
 
-char mes[30];
+		frame temp = f[j];
+		f[j] = f[i];
+		f[i] = temp;
+	}
+}
 
-main()
+// Insertion sort algorithm to sort frames based on id
+void sortFrames(frame f[MAX], int n)
 {
-  int i,k,j,ml,fi,fcount,found,r,over,framel;
-  int max_len;
-  int len;
+	int i, j;
+	for(i=1; i<n; i++)
+	{
+		frame t = f[i];
+		j = i-1;
+		while(j>=0 && f[j].id > t.id)
+		{
+			f[j+1] = f[j];
+			j = j-1;
+		}
+		f[j+1] = t;
+	}
+}
 
-  printf("\nEnter message = ");
-  gets(mes);
+void showFrames(frame f[MAX] , int n ){
+	printf("\nframe_id \t frame_data \n");
+	printf("----------------------------\n");
+	for(i=0 ; i < n; i++)
+	{
+		printf("%d \t\t %s \n", f[i].id, f[i].data);
+	}
+}
 
-  printf("\n Enter max frame size in characters Ex: 3  ) : ");
-  scanf("%d", &max_len); 
+int main()
+{
+	frame f[MAX];
+	int n = 0;     // no of frames
+	int fsize;      // size of frame
 
-  ml=strlen(mes);
-  i=0;
-  fi=0;
-  over=0;
+	char msg[MAX];
+	int m = 0; // message iterator
+	int i, j;
 
-  while(1)
-  {
-    j=0;
-    len=1+(random()%max_len);
-   
-    while(j<len)
-    { 
-      frame[fi].text[j]=mes[i];
-      i=i+1;
-      j=j+1;    
-       
-      if(mes[i]=='\0')
-      {
-        frame[fi].fno=fi;
-        frame[fi].len=j;
-        over=1;
-        break;
-      }  //if      
-    } //while j<len
+	printf("Enter a message : ");
+	fgets(msg , MAX, stdin);
+	msg[strlen(msg)-1] = '\0'; // to remove '\n' from string
 
-    if(over == 0)
-    {
-      frame[fi].fno=fi;
-      frame[fi].len=len;
-    }
-    frame[fi].random=random()%100;
-
-    if(over==1)break;
-      fi=fi+1;
-  }  //while outer
-  fcount=fi+1;
-
-  printf("\nThe frames created are :\n");
-  printf("\nSequence_No  Random_num  Length            Content");
-   
-  for(i=0;i<fcount;i++)
-  {
-    printf("\n%d                %d          %d            ", frame[i].fno,frame[i].random,frame[i].len);  
-    for(j=0;j<frame[i].len;j++)
-    {
-      printf("%c",frame[i].text[j]);
-    }
-  }
-  //SORT wrt random --  simulate network delays
-  for(i=0;i<fcount;i++)
-  {
-    for(j=0;j<fcount;j++)
-    {
-      if(frame[i].random<frame[j].random)
-      {
-        temp=frame[i];
-  		  frame[i]=frame[j];
-  		  frame[j]=temp;
-      }    
-    }
-  }
-
-  //print recieved message
-  printf("\n---------------------------------------------------------------------------");
-  printf("\nFrames after simulting delay at router =");
-  printf("\nSequence_No  Random_num  Length            Content");
- 
-  for(i=0;i<fcount;i++)
-  {
-    printf("\n%d                %d          %d            ", frame[i].fno,frame[i].random,frame[i].len);  
-    for(j=0;j<frame[i].len;j++)
-    {
-      printf("%c",frame[i].text[j]);
-    }
-  }
-  printf("\nMessage received at receiver = ");
-  for(i=0;i<fcount;i++)
-  {
-    for(j=0;j<4;j++)
-    {
-      printf("%c",frame[i].text[j]);
-    }
-  }  
-//sort wrt serial number
-  for(i=0;i<fcount;i++)
-  {
-    for(j=0;j<fcount;j++)
-    {
-      if(frame[i].fno<frame[j].fno)
-      {
-        temp=frame[i];
-  		  frame[i]=frame[j];
-  		  frame[j]=temp;
-      }  
-    }
-  }
-
-  //print reordered message
-  printf("\n---------------------------------------------------------------------------");
-  printf("\nFrames re constructed =");
-  printf("\nSequence_No  Random_num  Length            Content");
- 
-  for(i=0;i<fcount;i++)
-  {
-    printf("\n%d                %d          %d            ", frame[i].fno,frame[i].random,frame[i].len);  
-    for(j=0;j<frame[i].len;j++)
-    {
-      printf("%c",frame[i].text[j]);
-    }
-  }
-   
-  printf("\n\nMessage  at receiver = ");
-
-  for(i=0;i<fcount;i++)
-  {
-    for(j=0;j<frame[i].len;j++)
-    {
-      printf("%c",frame[i].text[j]);
-    }
-  }
-  printf("\n");     
+	srand(time(NULL));
+		// Divide the message into frames
+	for(i=0 ; m < strlen(msg) ; i++)
+	{
+		f[i].id = i;
+		fsize = rand()%5+1; // variable Frame size in range [1,5]
+		n++;                // count number of frames
+				
+		strncpy(f[i].data , msg+m , fsize) ;
+		m = m+fsize ;
+	}
+	shuffleFrames(f, n);
+	printf("\nShuffled frames:");
+	showFrames(f,n);
+			
+	sortFrames(f, n);
+	printf("\nSorted frames:");
+	showFrames(f,n);
+			
+	printf("\nfinal message : ");
+	for(i=0; i< n; i++)
+	{
+		printf("%s", f[i].data);
+	}
+	printf("\n");
 }
