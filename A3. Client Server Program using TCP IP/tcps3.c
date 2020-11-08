@@ -1,92 +1,45 @@
-#include<stdio.h>
-#include<sys/types.h>
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<unistd.h>
-#include <termios.h>
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <fcntl.h> 
+#include <arpa/inet.h>
+#include <unistd.h>
 
-void error(char *msg)
+int main()
 {
-	perror(msg);
-	exit(1);
-}
-
-
-
-int main(int argc,char *argv[])
-{
-	int sockfd,newsockfd,portno,clilen,n,slen,pid;
-	char buffer[256],c[200];
-	char fname[20];
-	
-	struct sockaddr_in serv_addr,cli_addr;
-	FILE *fptr;
-	printf("\n*******This is server ,for ipaddress open another terminal (press + ) and type : \n");
-//	printf(" ifconfig \n to remove bind error :\n fuser -k 5000/tcp \n where 5000 is port number where server is waiting ");
-	printf("\nto run client (press + ) and type  : ./c "); 
-	printf("\nEnter server port number  :  Ex: 5000 ");
-	scanf("%d",&portno);
-	
-    //    portno=5000;
-	
-	sockfd=socket(AF_INET,SOCK_STREAM,0);
-
-	if(sockfd<0)
-		error("\nERROR opening socket");
-	bzero((char *)&serv_addr,sizeof(serv_addr));
-	serv_addr.sin_family=AF_INET;
-	serv_addr.sin_addr.s_addr=INADDR_ANY;
-	serv_addr.sin_port=htons(portno);
-
-	if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))<0)
-		perror("\nERROR in binding");
-	printf("\nNow server is up wating for client");
-	
-	listen(sockfd,5);
-	clilen=sizeof(cli_addr);
-	
-	while(1)
-	{
-
-		newsockfd=accept(sockfd,(struct sockaddr *)&cli_addr,&clilen);
-
-		printf("\n New client requested it sockfd  =  %d",newsockfd);
-		bzero(fname,20);
-		close(sockfd);
-		n=read(newsockfd,fname,20);
-		printf("\nn Requesting file content  %s  ",fname);
-		slen=strlen(fname);
-		if(n<0)
-			error("\nERROR reading from socket");
-		fptr=fopen(fname,"r");
-		if(fptr==NULL)
-		{		  
-			printf("\nSERVER:file not found");
-			bzero(buffer,20);
-			strcpy(buffer,"file not found....");
-			if(send(newsockfd, buffer, strlen(buffer), 0) == -1)
-				perror("send");
-
-			close(newsockfd);
-			fclose(fptr);
-			_exit(0);   
-		}
-		
-		printf("\nserver : Following information is send back to client :- \n\n\n");
-
-		while(!feof(fptr))
-		{
-			fgets(buffer,79,fptr);
-			if(send(newsockfd, buffer, strlen(buffer), 0) == -1)
-				perror("send");
-			puts(buffer);
-		}
-		
-		printf("\nserver :file contents are transfered"); 
-		fclose(fptr);
-		close(newsockfd);
-		printf("\nserver :Process is going to terminate\n"); 
-		exit(0);
-    } //while(1)  
+    int sersock, sock, fd, n;
+    char buffer[1024], fname[50];
     
+    sersock = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in addr = { AF_INET, htons(1234), inet_addr("127.0.0.1") };
+
+    // Forcefully connecting to same port everytime
+    int reuse = 1;
+	setsockopt(sersock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+
+    /* attaching socket to port */
+    bind(sersock, (struct sockaddr *) &addr, sizeof(addr));
+    printf("\nServer is Online");
+
+    listen(sersock, 5); // listen(int sockfd, int backlog)
+    sock = accept(sersock, NULL, NULL);
+
+    /*  receive the filename from client */
+    recv(sock, fname, 50, 0);
+    printf("\nRequesting for file: %s\n", fname);
+
+    fd = open(fname, O_RDONLY); // open file in read-only mode
+    if (fd < 0)
+    {
+        send(sock, "\nFile not found\n", 15, 0); // strlen(\nFile not found)=15
+        exit(0);
+    }
+
+    while ((n = read(fd, buffer, sizeof(buffer))) > 0)
+    {
+        send(sock, buffer, n, 0);
+    }
+    printf("\nFile content sent\n");
+    
+    close(fd);
+    return 0;
 }
