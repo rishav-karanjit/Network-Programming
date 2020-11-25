@@ -1,83 +1,39 @@
-    /* Receiver/client multicast Datagram example. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h> 
+#include <string.h> 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #include <arpa/inet.h>
-    #include <netinet/in.h>
-    #include <stdio.h>
-    #include <stdlib.h>
-    struct sockaddr_in localSock;
-    struct ip_mreq group;
-    int sd;
-    int datalen;
-    char databuf[1024];
-    int main(int argc, char *argv[])
-    {
-    /* Create a datagram socket on which to receive. */
-    sd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(sd < 0)
-    {
-    perror("Opening datagram socket error");
-    exit(1);
-    }
-    else
-    printf("Opening datagram socket....OK.\n");
-    /* Enable SO_REUSEADDR to allow multiple instances of this */
-    /* application to receive copies of the multicast datagrams. */
-    {
-    int reuse = 1;
-    if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0)
-    {
-    perror("Setting SO_REUSEADDR error");
-    close(sd);
-    exit(1);
-    }
-    else
-    printf("Setting SO_REUSEADDR...OK.\n");
-    }
-    /* Bind to the proper port number with the IP address */
-    /* specified as INADDR_ANY. */
-    memset((char *) &localSock, 0, sizeof(localSock));
-    localSock.sin_family = AF_INET;
-    localSock.sin_port = htons(4321);
-    localSock.sin_addr.s_addr = INADDR_ANY;
-    if(bind(sd, (struct sockaddr*)&localSock, sizeof(localSock)))
-    {
-    perror("Binding datagram socket error");
-    close(sd);
-    exit(1);
-    }
-    else
-    printf("Binding datagram socket...OK.\n");
-    /* Join the multicast group 226.1.1.1 on the local 203.106.93.94 */
-    /* interface. Note that this IP_ADD_MEMBERSHIP option must be */
-    /* called for each local interface over which the multicast */
-    /* datagrams are to be received. */
-    group.imr_multiaddr.s_addr = inet_addr("226.1.1.1");
- //   group.imr_interface.s_addr = inet_addr("127.0.0.1");
-    group.imr_interface.s_addr = INADDR_ANY;  //inet_addr("192.168.1.2");
-    
-    if(setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0)
-    {
-    perror("Adding multicast group error");
-    close(sd);
-    exit(1);
-    }
-    else
-    printf("Adding multicast group...OK.\n");
-    /* Read from the socket. */
-    datalen = sizeof(databuf);
-    if(read(sd, databuf, datalen) < 0)
-    {
-    perror("Reading datagram message error");
-    close(sd);
-    exit(1);
-    }
-    else
-    {
-    printf("Reading datagram message...OK.\n");
-    printf("The message from multicast server is: \"%s\"\n", databuf);
-    }
-    return 0;
-    }
+int main()
+{
+	int sock, reuse = 1;
+	char msg[1024];
+	struct sockaddr_in addr;
+	struct ip_mreq group;
 
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+	
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(1234);
+	addr.sin_addr.s_addr = INADDR_ANY; // to listen on all available interfaces.
+
+	bind(sock, (struct sockaddr*)&addr, sizeof(addr));
+
+	group.imr_multiaddr.s_addr = inet_addr("226.1.1.1");
+	group.imr_interface.s_addr = inet_addr("127.0.0.1");
+	setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group));
+	printf("Waiting for message from server.....");
+
+	// recvfrom(sock, msg, sizeof(msg), 0, NULL, NULL);
+	read(sock, msg, sizeof(msg));
+	printf("\nThe message from multicast server is : %s \n", msg);
+
+	close(sock);
+	return 0;
+}
