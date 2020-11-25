@@ -1,138 +1,76 @@
-
-//derived from slide5.c
-
-/* run this pgm first  
-
-
-cc swp_recv3.c -w -o r
-
-./r
-
-*/
-
 #include<stdio.h>
+#include<stdlib.h>
 #include<string.h>
+#include<time.h>
+#include<unistd.h>
+#include<sys/socket.h>
 #include<sys/types.h> 
-#include<netinet/in.h> 
 #include<arpa/inet.h> 
 
+#define MAX 20
 
-#define RECVBUF 20
-
-int AdvWindow=0;
-
-
-main() 
+int main() 
 { 
-int std, lfd, len, port, i, j, status, choice; 
-char str[20], str1[20], err[20],advWindow[1024] , ack_str[20];
-int ack; 
-char  frame1[20] ;
-char  frame[20] ;
-int sendsize=5; 
- char *recv_str;
-   recv_str=malloc(50);
-   memset(recv_str, 0, 20); 
-int yes=1;
+	int sersock = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in addr = { AF_INET, htons(1234), inet_addr("127.0.0.1") };
 
-struct sockaddr_in saddr, caddr;
+	// Forcefully connecting to same port everytime
+	int reuse = 1;
+	setsockopt(sersock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
 
- port=5000;
- 
-// printf("Enter the port address:"); 
- // scanf("%d", &port);
- 
+	bind(sersock, (struct sockaddr *) &addr, sizeof(addr));
+	printf("\nServer is Online\n");
 
+	listen(sersock, 5);
+	int sock = accept(sersock, NULL, NULL);
 
-
-std = socket(AF_INET, SOCK_STREAM, 0); 
-
-
-if(std<0) 
-perror("Error");
-
-
-// lose the pesky "address already in use" error message
- if (setsockopt(std, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(int)) == -1) 
-  {
-    perror("setsockopt");
-    // exit(1);
-  }
- 
-bzero(&saddr, sizeof(saddr)); 
-saddr.sin_family = AF_INET; 
-saddr.sin_addr.s_addr = htonl(INADDR_ANY); 
-saddr.sin_port = htons(port);
-
- 
-lfd = bind(std, (struct sockaddr *)&saddr, sizeof(saddr)); 
-
-
-if(lfd) 
-perror("Bind Error"); 
-
-listen(std, 5); 
-
-len = sizeof(&caddr); 
-lfd = accept(std, (struct sockaddr *)&caddr, &len); 
-
-
-
-//AdvWindow=rand(20); 
-
-len=-1;
-i=0;
-
-  for(;;) 
-    { 
-      //media
-       memset(frame, 0, 20); 
-       recv(lfd, frame, 100, 0) ;
-
-       if(strcmp(frame, "Exit") == 0) 
+	char frame[MAX];
+	char res[MAX]; // to store all bytes that are recieved successfully
+	int ack;
+	int k=0;	   // iterator for res
+	srand(time(NULL));
+	
+	while(1) 
 	{ 
-		printf("\nExitting!\n"); 
-		break; 
-	} 
+		int recvsize = 5;
+		memset(frame, 0, MAX); // re-initialise frame buffer with 0
 
+		recv(sock, frame, recvsize, 0);  // recv(socket, buffer, length, flag)
+		if(strcmp(frame, "Exit") == 0) break; // at end exit frame is recieved 
 
-       int err=rand()%8;
-       int i5;
-       if(err < 4 )
-          {
-            memset(frame1, 0, 20); 
-            for(i5=0;i5<err;i5++)
-                  frame1[i5]=frame[i5];
- 
-            recv_str=(char*) strcat(recv_str,frame1);
-            frame[err]='x';
-            printf("\n\nIntroduce error at frame= %d   Error at = %d , Error full frame recved = %s -- Retransmit ",err , i+err , frame);
-            i=i+ err;
-            ack=i;
-            //  continue;
-          }
-       //receiver
-       else
-         { 
-           printf("\n\nRecving frame (SUCCUSS ) = %s   ,Recving  WINDOW: start seqno= %d -  end seqno= %d   ",frame, i, i+ sendsize-1);
-           recv_str=(char*) strcat(recv_str,frame);
-           i=i+ sendsize;
-           ack=i;  
-         }
+		if(strlen(frame) < recvsize) 
+		{
+			recvsize = strlen(frame);
+		}
+		
+		int err_idx = rand()%8; // probability of byte to get corrupted = 50%
+		if(err_idx < recvsize)
+		{
+			recvsize = err_idx;
+			frame[err_idx]='x';
+			printf("\nError occured at = %d", err_idx+1);
+		}
 
-      printf("\n Recver : Sending ACK back to sender ack = %d ", ack);
-      sprintf(ack_str,"%d",ack);
-      send(lfd, ack_str, strlen(ack_str), 0) ;  
-    } /*END OF FOR*/
+		int j;
+		for(j=0; j<recvsize ; j++)
+		{
+			res[k++] = frame[j];
+		}
+		printf("\nPacket received  = %s", frame);
+		printf("\nReceiving window: ");
+		printf("\n start seqno = %d", k-recvsize);
+		printf("\n end seqno   = %d", k-1);
 
+		ack = k ;
+		printf("\nSending ack = %d", ack);
+		send(sock, &ack, sizeof(ack), 0) ;  
+		printf("\n");
+	}
 
-     printf("\nReceived Final  str at Destination = %s \n ", recv_str);
-     close(std); 
-   
- } 
+	res[k] = '\0';
+	printf("\n\nFinal string recieved at Destination = ");
+	fputs(res, stdout);
 
-
-
-
-
-  
+	printf("\n\n");
+	close(sock); close(sersock);
+}
