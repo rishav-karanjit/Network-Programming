@@ -1,73 +1,53 @@
-/*
-
-cc swp_send3.c -w -o s
-
-./s
-
-
-*/
 #include<stdio.h> 
 #include<stdlib.h>
 #include<string.h> 
+#include<unistd.h>
 #include<sys/socket.h> 
 #include<sys/types.h> 
-#include<netinet/in.h> 
 #include<arpa/inet.h> 
 
+#define MAX 20
 
-main() 
+int main() 
 { 
-	int std,  len, choice, i,j,status,sendsize,port,recvsize,temp1; 
-	char str[20], frame[20], temp[20], ack[20],sendwin[20]; 
-	char *msg="network programming " ; // lab  dept of cse sit tumkur";
-	struct sockaddr_in saddr, caddr; 
-	port=5000;
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in addr = { AF_INET, htons(1234), inet_addr("127.0.0.1") };
 
-	//printf("Enter the port address"); 
+    /*  keep trying to establish connection with server */
+    while(connect(sock, (struct sockaddr *) &addr, sizeof(addr))) ;
+    printf("\nClient is connected to Server\n");
 
-	// scanf("%d", &port); 
+    char msg[MAX];
+    printf("\nEnter message to send : ");
+    fgets(msg, MAX, stdin);
+    msg[strlen(msg)-1] = '\0';
 
-	std = socket(AF_INET, SOCK_STREAM, 0); 
-	if(std<0) 
-		perror("Error");
-	bzero(&saddr, sizeof(saddr)); 
-	saddr.sin_family = AF_INET; 
-	inet_pton(AF_INET, "127.0.0.1", &saddr.sin_addr); 
-	saddr.sin_port = htons(port); 
+    char frame[MAX];
+    int i = 0;
+    int ack; 
+    
+    while(i<strlen(msg)) 
+    { 
+        int sendsize = 5;
+        memset(frame, 0, MAX); // re-initialise frame buffer with 0
 
-	connect(std, (struct sockaddr *)&saddr, sizeof(saddr)); 
+        // strncpy(destination , source , length)
+        strncpy(frame, msg+i, sendsize); //copy msg to frame
+        if( sendsize > strlen(frame) )
+        {
+            sendsize = strlen(frame);
+        }
+        printf("\n\nSending packet = %s", frame);
+        printf("\nSending window: ");
+        printf("\n start seqno = %d", i);
+        printf("\n end seqno   = %d", i+sendsize-1);
 
-	printf("\n msg= %s ",msg);
-	printf("\n len = %d ",strlen(msg) );
-	printf("\n len = %d ",strlen(msg) );
-	printf("Enter the text:"); 
-	//scanf("%s", str);
+        send(sock, frame, sendsize, 0);
+        recv(sock, &ack, sizeof(ack), 0); 
+        printf("\nreceived ack no = %d ",ack);  
 
-	i = 0;
-	sendsize=5; 
-	while(i<strlen(msg)) 
-	 { 
-        //sender
-        memset(frame, 0, 20); 
-        strncpy(frame, msg+i, sendsize); 
-        printf("\n\nSending frame = %s , Sending WINDOW: start seqno= %d -  end seqno= %d  ",frame ,i , i+sendsize-1 );
-        send(std, frame, strlen(frame), 0) ;  
-        printf("\n sending  data and wait for ack");
-        memset(ack, 0, 20); 
-        recv(std, ack, 100, 0) ;
-        sscanf(ack, "%d", &status);
-        printf("\n  recvd ack no = %d ",status);  
-
- // next data seq no = incoming ack no
-
-        i=status;
-
-  //  break;
-  	
-  } /*END OF WHILE*/
-  write(std, "Exit", sizeof("Exit")); 
-  printf("\nExitting!\n"); 
- 
-  close(std); 
-
+        i = ack; // next data seq no = incoming ack no
+    }
+    send(sock, "Exit", strlen("Exit"), 0); 
+    close(sock); printf("\n\n");
 }
