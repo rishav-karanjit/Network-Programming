@@ -12,16 +12,12 @@
 int main() 
 {
 	char buffer[MAX], msg[MAX]; 
-	struct sockaddr_in servaddr; 
-
+	
 	// Creating socket file descriptor 
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-	memset(&servaddr, 0, sizeof(servaddr)); 
 	// Filling server information 
-	servaddr.sin_family = AF_INET; 
-	servaddr.sin_port = htons(1234); // htons(port)
-	servaddr.sin_addr.s_addr = INADDR_ANY; 
+	struct sockaddr_in servaddr={AF_INET,htons(1234),INADDR_ANY}; 
 	
 	while(1)
 	{

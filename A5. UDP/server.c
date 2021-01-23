@@ -12,27 +12,17 @@
 int main() 
 { 
 	char buffer[MAX], msg[MAX]; 
-	struct sockaddr_in servaddr, cliaddr; 
 	 
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-	// Forcefully connecting to same port everytime
-	int reuse = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
-	
-	// Initialize servaddr and cliaddr with zero
-	memset(&servaddr, 0, sizeof(servaddr)); 
-	memset(&cliaddr, 0, sizeof(cliaddr)); 
-	int len = sizeof(cliaddr);
-	
-	// Filling server information 
-	servaddr.sin_family = AF_INET; // IPv4 
-	servaddr.sin_addr.s_addr = INADDR_ANY; //INADDR_ANY listen on all available interfaces
-	servaddr.sin_port = htons(1234); 
-	
+	struct sockaddr_in servaddr={AF_INET,htons(1234),INADDR_ANY}; 
+	struct sockaddr_in cliaddr;
+		
 	// Bind the socket with the server address 
 	bind(sock, (const struct sockaddr *)&servaddr, sizeof(servaddr));
 	printf("Waiting for message from client...\n");
+	
+	int len = sizeof(cliaddr);
 	 
 	while(1)
 	{
